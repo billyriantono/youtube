@@ -37,7 +37,7 @@ return [
 	/**
 	 * After redirection URI ,for example you want do another things after getting the access token like channel name
 	 */
-	'after_redirect_url' => getenv('YOUTUBE_AFTER_REDIRECT_URI'),
+	'after_redirect_uri' => getenv('YOUTUBE_AFTER_REDIRECT_URI'),
 	/**
 	 * Access Type
 	 */
