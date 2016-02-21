@@ -133,7 +133,7 @@ class Youtube
 		$clients = new \Google_Client();
 		$clients->setAccessToken($accessToken);
 		$you = new \Google_Service_YouTube($clients);
-		return $you->videos->listVideos("id,snippet,statistics", array(
+		return $you->videos->listVideos("id,snippet,statistics,player", array(
 			'id' => $videoId
 		));
 	}
