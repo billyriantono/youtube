@@ -25,7 +25,7 @@ Route::group(['prefix' => config('youtube.route_base_uri')], function() {
 
 		$afterRedirectUri = config('youtube.after_redirect_url');
 		if(isset($afterRedirectUri)){
-			return redirect($afterRedirectUri);
+			return redirect($afterRedirectUri)->with('code',$token);
 		} else {
 			return redirect('/');
 		}
