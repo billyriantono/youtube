@@ -4,12 +4,12 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Joe Dawson",
-            "email": "hi@joedawson.me"
-        },
-        {
             "name": "Billy Riantono",
             "email": "billy@riantono.com"
+        },
+        {
+            "name": "Joe Dawson",
+            "email": "hi@joedawson.me"
         }
     ],
     "require": {

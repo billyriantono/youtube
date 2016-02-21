@@ -1,6 +1,7 @@
-# Laravel 5 - YouTube Uploader
+# Laravel 5 - YouTube API Wrapper 
+Based on Dawson/Youtube
 
-If you've ever needed to upload videos to a single YouTube channel from your Laravel 5 application, then hopefully this is the package for you.
+If you've ever needed to upload videos to a single YouTube channel or you need request data from your Laravel 5 application, then hopefully this is the package for you.
 
 ## Installation
 
@@ -14,7 +15,7 @@ After you've added the above, run `composer update` to pull it in. Once your upd
 
 ```php
 'providers' => [
-	'Dawson\Youtube\YoutubeServiceProvider',
+	'billyriantono\Youtube\YoutubeServiceProvider',
 ],
 ```
 
@@ -22,7 +23,7 @@ Then add the alias...
 
 ```php
 'aliases' => [
-	'Youtube' => 'Dawson\Youtube\YoutubeFacade',
+	'billyriantono' => 'Dawson\Youtube\YoutubeFacade',
 ],
 ```
 
@@ -37,6 +38,11 @@ Next it's time to configure our settings in `config/youtube.php` makes use of en
 ```
 GOOGLE_CLIENT_ID=YOUR_CLIENT_ID
 GOOGLE_CLIENT_SECRET=YOUR_SECRET
+YOUTUBE_APPLICATION_NAME="Your Application Name"
+YOUTUBE_REDIRECT_URI="Your Callback Uri" for example : youtube-callback
+YOUTUBE_AUTHENTICATION_URI="Your Authentication Uri"
+YOUTUBE_AFTER_REDIRECT_URI="Your Custom Controller after getting access token"
+GOOGLE_APPROVAL_PROMPT="auto|force"
 ```
 
 You can find these values on Google's [developer console](https://console.developers.google.com/project) for your application. 
