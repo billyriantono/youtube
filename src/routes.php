@@ -3,6 +3,8 @@
 /**
  * Route URI's
  */
+use Illuminate\Support\Facades\Redirect;
+
 Route::group(['prefix' => config('youtube.route_base_uri')], function() {
 
 	Route::get(config('youtube.authentication_uri'), function()
@@ -25,7 +27,7 @@ Route::group(['prefix' => config('youtube.route_base_uri')], function() {
 
 		$afterRedirectUri = config('youtube.after_redirect_uri');
 		if(isset($afterRedirectUri)){
-			return redirect($afterRedirectUri)->with('code',$token);
+			return Redirect::intended($afterRedirectUri)->with('code',$token);
 		} else {
 			return redirect('/');
 		}
