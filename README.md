@@ -8,7 +8,7 @@ If you've ever needed to upload videos to a single YouTube channel or you need r
 Add the following to your `composer.json`.
 
 ```json
-"dawson/youtube": "dev-master"
+"billyriantono/youtube": "dev-master"
 ```
 
 After you've added the above, run `composer update` to pull it in. Once your update has finished, we'll need to add the service provider to your `config/app.php`
@@ -23,7 +23,7 @@ Then add the alias...
 
 ```php
 'aliases' => [
-	'billyriantono' => 'Dawson\Youtube\YoutubeFacade',
+	'Youtube' => 'billyriantono\Youtube\YoutubeFacade',
 ],
 ```
 
@@ -31,7 +31,7 @@ Then add the alias...
 
 Run `php artisan vendor:publish` to publish the migrations and config. Then migrate the database with, `php artisan migrate`.
 
-This will create our `youtube_access_tokens` table which will of course, hold our access tokens once we've authenticated with Google.
+This will create our `youtube_access_tokens` and `channels` table which will of course, hold our access tokens once we've authenticated with Google.
 
 Next it's time to configure our settings in `config/youtube.php` makes use of environment variables to ensure no secret crentials make way into version control. So add the following variables to your `.env` file.
 
