@@ -1,19 +1,22 @@
 <?php namespace Dawson\Youtube;
 
+use App\Channel;
 use DB;
 use Storage;
 use Carbon\Carbon;
 
-class Youtube {
+class Youtube
+{
 
 	protected $client;
 	protected $youtube;
+	protected $channelId;
 
 	/**
 	 * Constructor accepts the Google Client object, whilst setting the configuration options.
 	 * @param \Google_Client $client
 	 */
-	public function __construct($development = false)
+	public function __construct($development = false, $channelId = 0)
 	{
 		$this->client = new \Google_Client;
 		$this->client->setApplicationName(config('youtube.application_name'));
@@ -25,13 +28,18 @@ class Youtube {
 		$this->client->setClassConfig('Google_Http_Request', 'disable_gzip', true);
 
 		$redirect_uri = config('youtube.route_base_uri') ?
-			config('youtube.route_base_uri') . '/' . config('youtube.redirect_uri') : 
+			config('youtube.route_base_uri') . '/' . config('youtube.redirect_uri') :
 			config('youtube.redirect_uri');
 		$this->client->setRedirectUri(url($redirect_uri));
 
 		$this->youtube = new \Google_Service_YouTube($this->client);
 
-		$accessToken = $this->getLatestAccessTokenFromDB();
+		$this->channelId = $channelId;
+		if (strlen($channelId) == 0) {
+			$accessToken = $this->getLatestAccessTokenFromDB();
+		} else {
+			$accessToken = $this->getLatestAccessTokenByChannelId($channelId);
+		}
 
 		if ($accessToken) {
 			$this->client->setAccessToken($accessToken);
@@ -51,6 +59,14 @@ class Youtube {
 
 		DB::table('youtube_access_tokens')->insert($data);
 	}
+
+	public function saveAccessTokenToChannel($accessToken, $channelId)
+	{
+		$channel = Channel::where('channel_id', $channelId)->first();
+		$channel->access_token = $accessToken;
+		$channel->save();
+	}
+
 	/**
 	 * Returns the last saved access token, if there is one, or null
 	 * @return mixed
@@ -58,19 +74,75 @@ class Youtube {
 	public function getLatestAccessTokenFromDB()
 	{
 		$latest = DB::table('youtube_access_tokens')
-				->orderBy('created_at', 'desc')
-				->first();
+			->orderBy('created_at', 'desc')
+			->first();
 
-		if ($latest) { return $latest->access_token; }
+		if ($latest) {
+			return $latest->access_token;
+		}
 
 		return null;
 	}
 
+	public function getLatestAccessTokenByChannelId($channelId)
+	{
+		$latest = DB::table('channels')
+			->where('channel_id', $channelId)
+			->orderBy('created_at', 'desc')
+			->first();
+
+		if ($latest) {
+			return $latest->access_token;
+		}
+
+		return null;
+	}
+
+	public static function getChannel($accessToken)
+	{
+		$clients = new \Google_Client();
+		$clients->setAccessToken($accessToken);
+		$you = new \Google_Service_YouTube($clients);
+		return $you->channels->listChannels("id,snippet", array(
+			'mine' => true
+		));
+	}
+
+	public static function getChannelStats($accessToken)
+	{
+		$clients = new \Google_Client();
+		$clients->setAccessToken($accessToken);
+		$you = new \Google_Service_YouTube($clients);
+		return $you->channels->listChannels("id,statistics", array(
+			'mine' => true
+		));
+	}
+
+	public static function getChannelBranding($accessToken)
+	{
+		$clients = new \Google_Client();
+		$clients->setAccessToken($accessToken);
+		$you = new \Google_Service_YouTube($clients);
+		return $you->channels->listChannels("id,brandingSettings", array(
+			'mine' => true
+		));
+	}
+
+
+	public static function getVideoInformation($accessToken,$videoId){
+		$clients = new \Google_Client();
+		$clients->setAccessToken($accessToken);
+		$you = new \Google_Service_YouTube($clients);
+		return $you->videos->listVideos("id,snippet,statistics", array(
+			'id' => $videoId
+		));
+	}
+
 	/**
 	 * Upload the video to YouTube
-	 * @param  string 	$path    	The path to the file you wish to upload.
-	 * @param  array 	$snippet 	An array of data.
-	 * @param  string 	$status  	The status of the uploaded video, set to 'public' by default.
+	 * @param  string $path The path to the file you wish to upload.
+	 * @param  array $snippet An array of data.
+	 * @param  string $status The status of the uploaded video, set to 'public' by default.
 	 * @return mixed
 	 */
 	public function upload($path, array $data, $privacyStatus = 'public')
@@ -78,58 +150,54 @@ class Youtube {
 		$this->handleAccessToken();
 
 		/* ------------------------------------
-		#. Setup the Snippet
-		------------------------------------ */
+        #. Setup the Snippet
+        ------------------------------------ */
 		$snippet = new \Google_Service_YouTube_VideoSnippet();
-		if (array_key_exists('title', $data))
-		{
+		if (array_key_exists('title', $data)) {
 			$snippet->setTitle($data['title']);
 		}
-		if (array_key_exists('description', $data))
-		{
+		if (array_key_exists('description', $data)) {
 			$snippet->setDescription($data['description']);
 		}
-		if (array_key_exists('tags', $data))
-		{
+		if (array_key_exists('tags', $data)) {
 			$snippet->setTags($data['tags']);
 		}
-		if (array_key_exists('category_id', $data))
-		{
+		if (array_key_exists('category_id', $data)) {
 			$snippet->setCategoryId($data['category_id']);
 		}
 
 
 		/* ------------------------------------
-		#. Set the Privacy Status
-		------------------------------------ */
+        #. Set the Privacy Status
+        ------------------------------------ */
 		$status = new \Google_Service_YouTube_VideoStatus();
 		$status->privacyStatus = $privacyStatus;
 
 		/* ------------------------------------
-		#. Set the Snippet & Status
-		------------------------------------ */
+        #. Set the Snippet & Status
+        ------------------------------------ */
 		$video = new \Google_Service_YouTube_Video();
 		$video->setSnippet($snippet);
 		$video->setStatus($status);
 
 		/* ------------------------------------
-		#. Set the Chunk Size
-		------------------------------------ */
+        #. Set the Chunk Size
+        ------------------------------------ */
 		$chunkSize = 1 * 1024 * 1024;
 
 		/* ------------------------------------
-		#. Set the defer to true
-		------------------------------------ */
+        #. Set the defer to true
+        ------------------------------------ */
 		$this->client->setDefer(true);
 
 		/* ------------------------------------
-		#. Build the request
-		------------------------------------ */
+        #. Build the request
+        ------------------------------------ */
 		$insert = $this->youtube->videos->insert('status,snippet', $video);
 
 		/* ------------------------------------
-		#. Upload
-		------------------------------------ */
+        #. Upload
+        ------------------------------------ */
 		$media = new \Google_Http_MediaFileUpload(
 			$this->client,
 			$insert,
@@ -140,13 +208,13 @@ class Youtube {
 		);
 
 		/* ------------------------------------
-		#. Set the Filesize
-		------------------------------------ */
+        #. Set the Filesize
+        ------------------------------------ */
 		$media->setFileSize(filesize($path));
 
 		/* ------------------------------------
-		#. Read the file and upload in chunks
-		------------------------------------ */
+        #. Read the file and upload in chunks
+        ------------------------------------ */
 		$status = false;
 		$handle = fopen($path, "rb");
 
@@ -158,19 +226,19 @@ class Youtube {
 		fclose($handle);
 
 		/* ------------------------------------
-		#. Set the defer to false again
-		------------------------------------ */
+        #. Set the defer to false again
+        ------------------------------------ */
 		$this->client->setDefer(true);
 
 		/* ------------------------------------
-		#. Return the Uploaded Video ID
-		------------------------------------ */
+        #. Return the Uploaded Video ID
+        ------------------------------------ */
 		return $status['id'];
 	}
 
 	/**
 	 * Delete a YouTube video by it's ID.
-	 * 
+	 *
 	 * @param  integer $youtube_id
 	 * @return Mixed
 	 */
@@ -178,8 +246,7 @@ class Youtube {
 	{
 		$this->handleAccessToken();
 
-		if($this->exists($id))
-		{
+		if ($this->exists($id)) {
 			return $this->youtube->videos->delete($id);
 		}
 
@@ -197,8 +264,7 @@ class Youtube {
 
 		$response = $this->youtube->videos->listVideos('status', ['id' => $id]);
 
-		if(empty($response->items))
-		{
+		if (empty($response->items)) {
 			return false;
 		}
 
@@ -207,28 +273,29 @@ class Youtube {
 
 	/**
 	 * Handle the Access token
-	 * 
+	 *
 	 * @return mixed
 	 */
 	private function handleAccessToken()
 	{
 		$accessToken = $this->client->getAccessToken();
 
-		if(is_null($accessToken))
-		{
+		if (is_null($accessToken)) {
 			throw new \Exception('An access token is required to delete a video.');
 		}
 
-		if($this->client->isAccessTokenExpired())
-		{
+		if ($this->client->isAccessTokenExpired()) {
 			$accessToken = json_decode($accessToken);
 			$refreshToken = $accessToken->refresh_token;
 			$this->client->refreshToken($refreshToken);
 			$newAccessToken = $this->client->getAccessToken();
 			$this->saveAccessTokenToDB($newAccessToken);
+			if (strlen($this->channelId) > 0) {
+				$this->saveAccessTokenToChannel($newAccessToken, $this->channelId);
+			}
 		}
 	}
-	
+
 	/**
 	 * Pass method calls to the Google Client.
 	 * @param  $method

@@ -1,11 +1,15 @@
 {
-    "name": "dawson/youtube",
-    "description": "Upload a video to YouTube with Laravel 5.",
+    "name": "billyriantono/youtube",
+    "description": "YouTube API Wrapper with Laravel 5.",
     "license": "MIT",
     "authors": [
         {
             "name": "Joe Dawson",
             "email": "hi@joedawson.me"
+        },
+        {
+            "name": "Billy Riantono",
+            "email": "billy@riantono.com"
         }
     ],
     "require": {
@@ -15,7 +19,7 @@
     },
     "autoload": {
         "psr-0": {
-            "Dawson\\Youtube": "src/"
+            "billyriantono\\Youtube": "src/"
         }
     },
     "minimum-stability": "stable"

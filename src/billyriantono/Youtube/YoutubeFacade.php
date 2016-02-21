@@ -1,4 +1,4 @@
-<?php namespace Dawson\Youtube;
+<?php namespace billyriantono\Youtube;
 
 use Illuminate\Support\Facades\Facade;
 

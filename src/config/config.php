@@ -5,7 +5,7 @@ return [
 	/**
 	 * Application Name.
 	 */
-	'application_name' => 'Your Application',
+	'application_name' => getenv('YOUTUBE_APPLICATION_NAME'),
 
 	/**
 	 * Client ID.
@@ -27,13 +27,17 @@ return [
 	 * Redirect URI, this does not include your TLD.
 	 * Example: 'callback' would be http://domain.com/callback
 	 */
-	'redirect_uri' => 'youtube-callback',
+	'redirect_uri' => getenv('YOUTUBE_REDIRECT_URI'),
 
 	/**
 	 * The autentication URI in with you will require to first authorize with Google.
 	 */
-	'authentication_uri' => 'youtube-auth',
+	'authentication_uri' => getenv('YOUTUBE_AUTHENTICATION_URI'),
 
+	/**
+	 * After redirection URI ,for example you want do another things after getting the access token like channel name
+	 */
+	'after_redirect_url' => getenv('YOUTUBE_AFTER_REDIRECT_URI'),
 	/**
 	 * Access Type
 	 */
@@ -42,7 +46,7 @@ return [
 	/**
 	 * Approval Prompt
 	 */
-	'approval_prompt' => 'auto',
+	'approval_prompt' => getenv('GOOGLE_APPROVAL_PROMPT'),
 
 	/**
 	 * Scopes.
